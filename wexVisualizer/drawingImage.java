@@ -36,7 +36,6 @@ import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.util.Log;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 public class drawingImage {
 
@@ -84,8 +83,8 @@ public class drawingImage {
 
             Bitmap result = Bitmap.createBitmap(l.getWidth() - 1, l.getHeight() - 1, Bitmap.Config.ARGB_8888);
             Canvas c = new Canvas(result);
-            c.drawColor(Color.parseColor("" + bg_color));
-            // c.drawColor(0, PorterDuff.Mode.CLEAR);
+            // c.drawColor(Color.parseColor("" + bg_color));
+            c.drawColor(0, PorterDuff.Mode.CLEAR);
 
             // nova golemina
             int newSize = (bytes.length);
@@ -320,8 +319,8 @@ public class drawingImage {
 
             Bitmap result = Bitmap.createBitmap(l.getWidth() - 1, l.getHeight() - 1, Bitmap.Config.ARGB_8888);
             Canvas c = new Canvas(result);
-            c.drawColor(Color.parseColor("" + bg_color));
-            // c.drawColor(0, PorterDuff.Mode.CLEAR);
+            // c.drawColor(Color.parseColor("" + bg_color));
+            c.drawColor(0, PorterDuff.Mode.CLEAR);
 
             Log.w(tag, "channels = " + channels);
 
@@ -566,8 +565,8 @@ public class drawingImage {
 
             Bitmap result = Bitmap.createBitmap(l.getWidth() - 1, l.getHeight() - 1, Bitmap.Config.ARGB_8888);
             Canvas c = new Canvas(result);
-            c.drawColor(Color.parseColor("" + bg_color));
-            // c.drawColor(0, PorterDuff.Mode.CLEAR);
+            // c.drawColor(Color.parseColor("" + bg_color));
+            c.drawColor(0, PorterDuff.Mode.CLEAR);
 
             byte[] newBytes = new byte[bytes.length-44];
 
