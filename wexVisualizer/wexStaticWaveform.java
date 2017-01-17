@@ -30,31 +30,26 @@ package com.wex.ringtonemaker.visual_astatic;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.util.Log;
+import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 public class wexStaticWaveform {
 
-	private Context context;
+    private Context context;
 
-	private LinearLayout drawingView;
+    private LinearLayout drawingView;
 
-	private drawingImage mVisualizerView;
+    private drawingImage mVisualizerView;
 
-	private String tag = "wexStaticWaveform TAG - ";
+    private String tag = "wexStaticWaveform TAG - ";
 
     public static enum TYPE_OF_DRAWING {
 
@@ -70,193 +65,285 @@ public class wexStaticWaveform {
         }
     }
 
-	// init wexStaticWaveform
-	public wexStaticWaveform(Context context, LinearLayout drawingView) {
-		this.context = context;
-		this.drawingView = drawingView;
-	}
+    // init wexStaticWaveform
+    public wexStaticWaveform(Context context, LinearLayout drawingView) {
+        this.context = context;
+        this.drawingView = drawingView;
+    }
     // init wexStaticWaveform
 
-	// get waveform from file PAHT & FILE
-	public void exeWaveform(TYPE_OF_DRAWING TYPE, byte[] bytes, double[] numbers, final String track_uri, File track_file, String bg_color, String color, float stroke, int drawingDensity, int channels) {
+    // get waveform from file PAHT & FILE
+    public void exeWaveform(final TYPE_OF_DRAWING TYPE,
+                            final byte[] bytes,
+                            final double[] numbers,
+                            final String track_uri,
+                            final File track_file,
+                            final String bg_color,
+                            final String color,
+                            final float stroke,
+                            final int drawingDensity,
+                            final int channels) {
 
-		mVisualizerView = new drawingImage(context, bg_color, color, stroke, drawingDensity, channels);
+        ViewTreeObserver vto = drawingView.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                drawingView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
 
-        switch (TYPE){
-            case BYTES:
-                class getTrackWaveform_BYTES   extends AsyncTask<Void, Void, Bitmap> {
+                boolean continue_b = true;
 
-                    byte[] bytes = null;
+                if(track_uri != null){
+                    try {
 
-                    public getTrackWaveform_BYTES(byte[] bytes){
-                        this.bytes = bytes;
-                    }
+                        File f = new File(track_uri);
+                        long size = f.length() / 1024;
+                        size = size / 1000;
 
-                    @Override
-                    protected Bitmap doInBackground(Void... params) {
-                        // TODO Auto-generated method stub
+                        // if file size is bigger the 15mbs - dont do anything - way to much processing
+                        if(size > 15 ){
+                            continue_b = false;
 
-                        // predpostavka deka pesnata e so dva kanala!
-                        Bitmap rez = mVisualizerView.myDraw_BYTES(drawingView, bytes);
+                            // in a case of a file bigger then 15mb, draw some sinwave
 
-                        return rez;
-                    }
+                            mVisualizerView = new drawingImage(context, bg_color, color, stroke, drawingDensity, channels);
 
-                    @Override
-                    protected void onPostExecute(Bitmap result) {
-                        // TODO Auto-generated method stub
-                        super.onPostExecute(result);
+                            int new_size = drawingView.getWidth();
 
-                        if (result != null) {
-                            Drawable d = new BitmapDrawable(context.getResources(), result);
-                            drawingView.setBackground(d);
-                        }
-                    }
+                            double[] preArray = new double[new_size];
 
-                }
-                new getTrackWaveform_BYTES(bytes ).execute(null, null, null);
-                break;
-            case NUMBERS:
-                class getTrackWaveform_NUMBERS extends AsyncTask<Void, Void, Bitmap> {
+                            for (int i = 0; i < new_size; i++) {
+                                preArray[i] = (Math.sin(i * 2.0f * 3.14 * (1.0f) / new_size));
+                            }
 
-                    double[] data = null;
+                            class getTrackWaveform_NUMBERS extends AsyncTask<Void, Void, Bitmap> {
 
-                    public getTrackWaveform_NUMBERS(double[] data){
-                        this.data = data;
-                    }
+                                double[] data = null;
 
-                    @Override
-                    protected Bitmap doInBackground(Void... params) {
-                        // TODO Auto-generated method stub
+                                public getTrackWaveform_NUMBERS(double[] data) {
+                                    this.data = data;
+                                }
 
-                        Bitmap rez = mVisualizerView.myDraw_NUMBERS(drawingView, data);
+                                @Override
+                                protected Bitmap doInBackground(Void... params) {
+                                    // TODO Auto-generated method stub
 
-                        return rez;
-                    }
+                                    Bitmap rez = mVisualizerView.myDraw_NUMBERS(drawingView, data);
 
-                    @Override
-                    protected void onPostExecute(Bitmap result) {
-                        // TODO Auto-generated method stub
-                        super.onPostExecute(result);
+                                    return rez;
+                                }
 
-                        if (result != null) {
-                            Drawable d = new BitmapDrawable(context.getResources(), result);
-                            drawingView.setBackground(d);
-                        } else {
+                                @Override
+                                protected void onPostExecute(Bitmap result) {
+                                    // TODO Auto-generated method stub
+                                    super.onPostExecute(result);
 
-                        }
-                    }
-                }
-                new getTrackWaveform_NUMBERS(numbers).execute(null, null, null);
-                break;
-            case MP3:
-                class getTrackWaveform_MP3     extends AsyncTask<Void, Void, Bitmap> {
+                                    if (result != null) {
+                                        Drawable d = new BitmapDrawable(context.getResources(), result);
+                                        drawingView.setBackground(d);
+                                    } else {
 
-                    String myPath = null; File myFile = null;
+                                    }
+                                }
+                            }
+                            new getTrackWaveform_NUMBERS(preArray).execute(null, null, null);
 
-                    public getTrackWaveform_MP3(String myPath, File myFile){
-                        this.myPath = myPath;
-                        this.myFile = myFile;
-                    }
-
-                    @Override
-                    protected Bitmap doInBackground(Void... params) {
-                        // TODO Auto-generated method stub
-
-                        if(myFile == null){
-                            myFile = new File(myPath);
+                        }else{
+                            continue_b = true ;
                         }
 
-                        int size = (int) myFile.length();
-
-                        byte[] bytes = new byte[size];
-
-                        try {
-                            FileInputStream f = new FileInputStream(myFile);
-                            f.read(bytes);
-                            f.close();
-                        } catch (FileNotFoundException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-
-                        // kanalite se predadeni preku KONSTRUKTOROT
-                        Bitmap rez = mVisualizerView.myDraw_MP3(drawingView, bytes);
-
-                        return rez;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Bitmap result) {
-                        // TODO Auto-generated method stub
-                        super.onPostExecute(result);
-
-                        if (result != null) {
-                            Drawable d = new BitmapDrawable(context.getResources(), result);
-                            drawingView.setBackground(d);
-                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
                     }
                 }
-                new getTrackWaveform_MP3(track_uri, track_file).execute(null, null, null);
-                break;
-            case WAV:
-                class getTrackWaveform_WAV     extends AsyncTask<Void, Void, Bitmap> {
 
-                    String myPath = null; File myFile = null;
+                if(continue_b) {
 
-                    public getTrackWaveform_WAV(String myPath, File myFile){
-                        this.myPath = myPath;
-                        this.myFile = myFile;
+                    mVisualizerView = new drawingImage(context, bg_color, color, stroke, drawingDensity, channels);
+
+                    switch (TYPE) {
+                        case BYTES:
+                            class getTrackWaveform_BYTES extends AsyncTask<Void, Void, Bitmap> {
+
+                                byte[] bytes = null;
+
+                                public getTrackWaveform_BYTES(byte[] bytes) {
+                                    this.bytes = bytes;
+                                }
+
+                                @Override
+                                protected Bitmap doInBackground(Void... params) {
+                                    // TODO Auto-generated method stub
+
+                                    // predpostavka deka pesnata e so dva kanala!
+                                    Bitmap rez = mVisualizerView.myDraw_BYTES(drawingView, bytes);
+
+                                    return rez;
+                                }
+
+                                @Override
+                                protected void onPostExecute(Bitmap result) {
+                                    // TODO Auto-generated method stub
+                                    super.onPostExecute(result);
+
+                                    if (result != null) {
+                                        Drawable d = new BitmapDrawable(context.getResources(), result);
+                                        drawingView.setBackground(d);
+                                    }
+                                }
+
+                            }
+                            new getTrackWaveform_BYTES(bytes).execute(null, null, null);
+                            break;
+                        case NUMBERS:
+                            class getTrackWaveform_NUMBERS extends AsyncTask<Void, Void, Bitmap> {
+
+                                double[] data = null;
+
+                                public getTrackWaveform_NUMBERS(double[] data) {
+                                    this.data = data;
+                                }
+
+                                @Override
+                                protected Bitmap doInBackground(Void... params) {
+                                    // TODO Auto-generated method stub
+
+                                    Bitmap rez = mVisualizerView.myDraw_NUMBERS(drawingView, data);
+
+                                    return rez;
+                                }
+
+                                @Override
+                                protected void onPostExecute(Bitmap result) {
+                                    // TODO Auto-generated method stub
+                                    super.onPostExecute(result);
+
+                                    if (result != null) {
+                                        Drawable d = new BitmapDrawable(context.getResources(), result);
+                                        drawingView.setBackground(d);
+                                    } else {
+
+                                    }
+                                }
+                            }
+                            new getTrackWaveform_NUMBERS(numbers).execute(null, null, null);
+                            break;
+                        case MP3:
+                            class getTrackWaveform_MP3 extends AsyncTask<Void, Void, Bitmap> {
+
+                                String myPath = null;
+                                File myFile = null;
+
+                                public getTrackWaveform_MP3(String myPath, File myFile) {
+                                    this.myPath = myPath;
+                                    this.myFile = myFile;
+                                }
+
+                                @Override
+                                protected Bitmap doInBackground(Void... params) {
+                                    // TODO Auto-generated method stub
+
+                                    if (myFile == null) {
+                                        myFile = new File(myPath);
+                                    }
+
+                                    int size = (int) myFile.length();
+
+                                    byte[] bytes = new byte[size];
+
+                                    try {
+                                        FileInputStream f = new FileInputStream(myFile);
+                                        f.read(bytes);
+                                        f.close();
+                                    } catch (FileNotFoundException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+
+                                    // kanalite se predadeni preku KONSTRUKTOROT
+                                    Bitmap rez = mVisualizerView.myDraw_MP3(drawingView, bytes);
+
+                                    return rez;
+                                }
+
+                                @Override
+                                protected void onPostExecute(Bitmap result) {
+                                    // TODO Auto-generated method stub
+                                    super.onPostExecute(result);
+
+                                    if (result != null) {
+                                        Drawable d = new BitmapDrawable(context.getResources(), result);
+                                        drawingView.setBackground(d);
+                                    }
+                                }
+                            }
+                            new getTrackWaveform_MP3(track_uri, track_file).execute(null, null, null);
+                            break;
+                        case WAV:
+                            class getTrackWaveform_WAV extends AsyncTask<Void, Void, Bitmap> {
+
+                                String myPath = null;
+                                File myFile = null;
+
+                                public getTrackWaveform_WAV(String myPath, File myFile) {
+                                    this.myPath = myPath;
+                                    this.myFile = myFile;
+                                }
+
+                                @Override
+                                protected Bitmap doInBackground(Void... params) {
+                                    // TODO Auto-generated method stub
+
+                                    if (myFile == null) {
+                                        myFile = new File(myPath);
+                                    }
+
+                                    int size = (int) myFile.length();
+
+                                    byte[] bytes = new byte[size];
+
+                                    try {
+                                        FileInputStream f = new FileInputStream(myFile);
+                                        f.read(bytes);
+                                        f.close();
+                                    } catch (FileNotFoundException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+
+                                    // kanalite se predadeni preku KONSTRUKTOROT
+                                    Bitmap rez = mVisualizerView.myDraw_WAV(drawingView, bytes);
+
+                                    return rez;
+                                }
+
+                                @Override
+                                protected void onPostExecute(Bitmap result) {
+                                    // TODO Auto-generated method stub
+                                    super.onPostExecute(result);
+
+                                    if (result != null) {
+                                        Drawable d = new BitmapDrawable(context.getResources(), result);
+                                        drawingView.setBackground(d);
+                                    }
+                                }
+                            }
+                            new getTrackWaveform_WAV(track_uri, track_file).execute(null, null, null);
+                            break;
                     }
 
-                    @Override
-                    protected Bitmap doInBackground(Void... params) {
-                        // TODO Auto-generated method stub
-
-                        if(myFile == null){
-                            myFile = new File(myPath);
-                        }
-
-                        int size = (int) myFile.length();
-
-                        byte[] bytes = new byte[size];
-
-                        try {
-                            FileInputStream f = new FileInputStream(myFile);
-                            f.read(bytes);
-                            f.close();
-                        } catch (FileNotFoundException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-
-                        // kanalite se predadeni preku KONSTRUKTOROT
-                        Bitmap rez = mVisualizerView.myDraw_WAV(drawingView, bytes);
-
-                        return rez;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Bitmap result) {
-                        // TODO Auto-generated method stub
-                        super.onPostExecute(result);
-
-                        if (result != null) {
-                            Drawable d = new BitmapDrawable(context.getResources(), result);
-                            drawingView.setBackground(d);
-                        }
-                    }
+                }else{
+                    Log.w(tag, "drawing waveform failed - file size way to big!");
                 }
-                new getTrackWaveform_WAV(track_uri, track_file).execute(null, null, null);
-                break;
-        }
 
-	}
+            }
+        });
+
+    }
 
 }
